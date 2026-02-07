@@ -81,3 +81,14 @@ Apache Kafka can be used for the following use cases:
 - LinkedIn uses Kafka to prevent spam, collect user interactions to make better connection recommendations in real-time.
 
 > Summary:  Kafka is a transportation mechanism which allows huge data flow across different systems.
+
+## Kafka Components
+
+1. Kafka Fundamentals: Topics, Partitions, Offsets, Producers, Consumers, and Interaction with other systems. Beginner level.
+2. Kafka Connect API: Understand how to import/export data to/from Kafka.
+3. Kafka Streams API: Learn how to process and transform data withing Kafka.
+4. `ksqlDB`: Write Kafka Streams application using SQL.
+5. Confluent Components: REST Proxy and Schema Registry.
+6. Kafka Security: Setup Kafka security in a Cluster and Integration yout applications w/ Kafka.
+7. Kafka Monitoring & Operations: Use Prometheus and Grafana to monitor Kafka, and learn Operations.
+8. Kafka Cluster Setup & Administration: Get a deep understanding of how Kafka & Zookeeper works, how to Setup Kafka, and varios administration tasks.
