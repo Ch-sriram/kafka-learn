@@ -8,7 +8,12 @@
     - [The Solution](#the-solution)
   - [Why Use Kafka?](#why-use-kafka)
     - [Use Cases of Kafka](#use-cases-of-kafka)
-
+  - [Kafka Components](#kafka-components)
+  - [Kafka Topics, Partitions, and Offsets](#kafka-topics-partitions-and-offsets)
+    - [Topics](#topics)
+    - [Partitions \& Offsets](#partitions--offsets)
+    - [Topic Example: `truck_gps`](#topic-example-truck_gps)
+    - [Topics, Partitions, and Offsets — Important Notes](#topics-partitions-and-offsets--important-notes)
 
 ---
 
@@ -92,3 +97,115 @@ Apache Kafka can be used for the following use cases:
 6. Kafka Security: Setup Kafka security in a Cluster and Integration yout applications w/ Kafka.
 7. Kafka Monitoring & Operations: Use Prometheus and Grafana to monitor Kafka, and learn Operations.
 8. Kafka Cluster Setup & Administration: Get a deep understanding of how Kafka & Zookeeper works, how to Setup Kafka, and varios administration tasks.
+
+## Kafka Topics, Partitions, and Offsets
+
+### Topics
+
+- A particular stream of data within your Kafka Cluster. A cluster can have many topics which can be `logs`, `purchases`, `twitter_tweets`, or `trucks_gps`.
+
+  ```terminal
+  +--------------------------------------------------+
+  |                  Kafka Cluster                   |
+  |--------------------------------------------------|
+  |                                                  |
+  |   +--------------------+                         |
+  |   |  Topic: logs       |                         |
+  |   +--------------------+                         |
+  |                                                  |
+  |   +--------------------+                         |
+  |   |  Topic: purchases  |                         |
+  |   +--------------------+                         |
+  |                                                  |
+  |   +--------------------------+                   |
+  |   |  Topic: twitter_tweets   |                   |
+  |   +--------------------------+                   |
+  |                                                  |
+  |   +-----------------------+                      |
+  |   |  Topic: trucks_gps    |                      |
+  |   +-----------------------+                      |
+  |                                                  |
+  +--------------------------------------------------+
+  ```
+
+- Like a table in a database (without all the constraints, meaning we can send whatever we want to a Kafka Topic)
+- You can have as many topics as you want in a Kafka Cluster.
+- A topic is identified by its name.  Example: `logs`, or `purchases`.
+- Any kind of message format is supported (JSON, XML, Avro, Protobufs, etc)
+- The sequence of messages is called a **data stream**.
+- You cannot query topics (although they're similar to tables without constraints and schema in databases), instead, use Kafka Producers to send data and Kafka Consumers to read the data.
+- Kafka Topics are **immutable**: once data is written to a partition, it cannot be changed.
+
+### Partitions & Offsets
+
+- *Topics are split* in **Partitions** (Eg: 100 partitions).
+  - Messages within each partition are ordered.
+  - Each *message within a partition gets an incremental id*, called **Offset** [or a Kafka partition offset].
+
+  ```terminal
+                                     /‾
+                                     |  Partition-0 : | 0 | 1 | 2 | 3 | 4 |   ---- writes ---->
+  +-------------+                    |  
+  | purchases   |--------------------+  Partition-1 : | 0 | 1 | 2 | 3 | 4 |   ---- writes ---->
+  |   (topic)   |                    |
+  +-------------+                    |  Partition-2 : | 0 | 1 | 2 | 3 | 4 |   ---- writes ---->
+                                     \_
+                                      
+  ```
+
+### Topic Example: `truck_gps`
+
+- So you've a fleet of trucks; each truck reports its GPS position to Kafka.
+- Each truck will send a message to Kafka every 20s, each message will contain the truck ID and the truck position (lat and long).
+- You can have a topic named `trucks_gps` that contains the position of all trucks.
+- We choose to create a topic with 10 partitions (arbitrary number).
+- All of this data going through Kafka, can be consumed by something like:
+  - Location Dashboard (to know the status of delivery)
+  - Notification Service (to send notifications to users delivery status).
+
+```terminal
+Fleet of Trucks (GPS update every 20s)
+================================================================================
+
+  Truck-001      Truck-002      Truck-003            ...            Truck-N
+     |               |               |                                 |
+     |  { truck_id, lat, lng }       |                                 |
+     +---------------+---------------+--------------- ... -------------+
+                                     |
+                                     v
+                      +--------------------------------------------------+
+                      |                 Kafka Cluster                   |
+                      |--------------------------------------------------|
+                      |  Topic: trucks_gps  (10 partitions)             |
+                      |                                                  |
+                      |   P0 : | 0 | 1 | 2 | 3 |                         |
+                      |   P1 : | 0 | 1 | 2 |                             |
+                      |   P2 : | 0 | 1 | 2 | 3 | 4 |                     |
+                      |   ..                                              |
+                      |   P9 : | 0 | 1 | 2 |                             |
+                      |                                                  |
+                      |  Key = truck_id  → ordering per truck            |
+                      +---------------------------+----------------------+
+                                                  |
+                                                  |
+                  +-------------------------------+-------------------------------+
+                  |                                                               |
+                  v                                                               v
+      +----------------------------+                         +----------------------------+
+      |     Location Dashboard     |                         |    Notification Service    |
+      |----------------------------|                         |----------------------------|
+      | • Live vehicle locations   |                         | • Delivery status updates  |
+      | • Route & delay monitoring |                         | • ETA / delay alerts       |
+      +----------------------------+                         +----------------------------+
+```
+
+### Topics, Partitions, and Offsets &mdash; Important Notes
+
+- Once the data is written to a partition, **it cannot be changed** (immutability).
+- Data is kept only for a limited time (default is 1w - but this is configurable).
+- Each offset is unique, meaning that an Offset only has meaning for a specific partition:
+  - Offset 3 in Partition-0 doesn't represent the same data as Offset 3 in Partition-9, they're completely different.
+  - Offsets are not re-used even if previous messages have been deleted.
+- Order is guaranteed by only within a partition [offset is incremental] (not across partitions).
+- Data is assigned randomly to a partition unless a key is provided.
+- You can have as many partitions per topic as you want.
