@@ -199,14 +199,14 @@ Fleet of Trucks (GPS update every 20s)
                                      |
                                      v
                       +--------------------------------------------------+
-                      |                 Kafka Cluster                   |
+                      |                 Kafka Cluster                    |
                       |--------------------------------------------------|
-                      |  Topic: trucks_gps  (10 partitions)             |
+                      |  Topic: trucks_gps  (10 partitions)              |
                       |                                                  |
                       |   P0 : | 0 | 1 | 2 | 3 |                         |
                       |   P1 : | 0 | 1 | 2 |                             |
                       |   P2 : | 0 | 1 | 2 | 3 | 4 |                     |
-                      |   ..                                              |
+                      |   ..                                             |
                       |   P9 : | 0 | 1 | 2 |                             |
                       |                                                  |
                       |  Key = truck_id  → ordering per truck            |
